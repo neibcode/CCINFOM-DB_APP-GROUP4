@@ -13,8 +13,8 @@ public class WelcomeScreen extends JPanel {
     public WelcomeScreen() {
         setBackground(Color.green);
         setLayout(new GridBagLayout());
-
         GridBagConstraints gbc = new GridBagConstraints();
+        
         gbc.weighty = 1;
         gbc.fill = GridBagConstraints.BOTH;
 
@@ -29,7 +29,7 @@ public class WelcomeScreen extends JPanel {
         add(new welcomePanel(), gbc);
     }
 
-    private class welcomePanel extends JPanel {
+    private static class welcomePanel extends JPanel {
         
         private welcomePanel() {
             setBackground(Color.white);
@@ -83,8 +83,8 @@ public class WelcomeScreen extends JPanel {
         }
     }
 
-    private class titlePanel extends  JPanel{
-        private  titlePanel(){
+    private static class titlePanel extends  JPanel{
+        private titlePanel(){
             setBackground(Color.orange);
             setLayout(new GridBagLayout());
             JLabel title = new JLabel("MOIST");
