@@ -18,8 +18,7 @@ public class MainFrame extends JFrame{
         this.setResizable(false);
         this.setSize(appDimension);
         this.setLocationRelativeTo(null);
-        this.setBackground(Color.white);
-        this.setVisible(true);
+        this.setBackground(Color.green);
 
         //Card Layout
         cardLayout = new CardLayout();
@@ -27,8 +26,9 @@ public class MainFrame extends JFrame{
 
         cards.add(new WelcomeScreen(), "WELCOME");
         cards.add(new HomeScreen(), "HOME");
-        cardLayout.show(cards, "HOME");
 
         add(cards);
+        cardLayout.show(cards, "HOME");
+        this.setVisible(true);
     }
 }

@@ -2,30 +2,93 @@ import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 
+import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
 
-public class WelcomeScreen extends JPanel{
+public class WelcomeScreen extends JPanel {
 
-    public WelcomeScreen(){
+    public WelcomeScreen() {
+        setBackground(Color.green);
         setLayout(new GridBagLayout());
+
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.weighty = 1;
+        gbc.fill = GridBagConstraints.BOTH;
 
-        //Title Panel
-        JPanel titlePanel = new JPanel();
-        titlePanel.setBackground(Color.orange);
+        // Title Panel
         gbc.gridx = 0;
-        gbc.fill = GridBagConstraints.BOTH;
         gbc.weightx = 0.6;
-        add(titlePanel, gbc);
+        add(new titlePanel(), gbc);
 
-        
-        //Welcome Panel
-        JPanel welcomePanel = new JPanel();
-        welcomePanel.setBackground(Color.white);
+        // Welcome Panel
         gbc.gridx = 1;
-        gbc.fill = GridBagConstraints.BOTH;
         gbc.weightx = 0.4;
-        add(welcomePanel, gbc);
+        add(new welcomePanel(), gbc);
+    }
+
+    private class welcomePanel extends JPanel {
+        
+        private welcomePanel() {
+            setBackground(Color.white);
+            setLayout(new GridBagLayout());
+            GridBagConstraints welcomeGbc = new GridBagConstraints();
+
+            // Welcome Panel Items
+            welcomeGbc.gridx = 0;
+            welcomeGbc.gridy = 0;
+            JLabel welcomeText = new JLabel("Welcome!");
+            add(welcomeText, welcomeGbc);
+
+            //Username Field
+            welcomeGbc.gridy = 1;
+            JLabel usernameLabel = new JLabel("Username ");
+            JTextField usernameField = new JTextField(20);
+            usernameField.setBackground(Color.lightGray);
+            usernameField.setToolTipText("Enter username");
+            
+            welcomeGbc.gridx = 0;
+            add(usernameLabel, welcomeGbc);
+            welcomeGbc.gridx = 1;
+            add(usernameField, welcomeGbc);
+            
+            //Password Field
+            welcomeGbc.gridy = 2;
+            JLabel passwordLabel = new JLabel("Password ");
+            JPasswordField passwordField = new JPasswordField(20);
+            passwordField.setBackground(Color.lightGray);
+            passwordField.setToolTipText("Enter password");
+
+            welcomeGbc.gridx = 0;
+            add(passwordLabel, welcomeGbc);
+
+            welcomeGbc.gridx = 1;
+            add(passwordField, welcomeGbc);
+            
+
+            //Login Button
+            welcomeGbc.gridy = 4;
+            welcomeGbc.fill = GridBagConstraints.BOTH;
+            JButton loginButton = new JButton("LOG IN");
+            loginButton.setBackground(Color.orange);
+            add(loginButton, welcomeGbc);
+
+            welcomeGbc.gridy = 5;
+            welcomeGbc.fill = GridBagConstraints.BOTH;
+            JButton signUpButton = new JButton("SIGN UP");
+            signUpButton.setBackground(Color.orange);
+            add(signUpButton, welcomeGbc);
+        }
+    }
+
+    private class titlePanel extends  JPanel{
+        private  titlePanel(){
+            setBackground(Color.orange);
+            setLayout(new GridBagLayout());
+            JLabel title = new JLabel("MOIST");
+            add(title);
+        }
     }
 }

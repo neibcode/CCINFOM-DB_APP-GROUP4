@@ -11,7 +11,7 @@ public class HomeScreen extends JPanel{
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.weightx = 1;
 
-        //Title Panel
+        //Search Panel
         JPanel searchPanel = new JPanel();
         searchPanel.setBackground(Color.orange);
         gbc.gridy = 0;
@@ -20,7 +20,7 @@ public class HomeScreen extends JPanel{
         add(searchPanel, gbc);
 
         
-        //Welcome Panel
+        //Results Panel (Do CardLayout)
         JPanel resultsPanel = new JPanel();
         resultsPanel.setBackground(Color.white);
         gbc.gridy = 1;
