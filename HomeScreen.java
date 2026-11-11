@@ -2,6 +2,7 @@ import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -10,9 +11,10 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 public class HomeScreen extends JPanel{
-
     private CardLayout cardLayout;
     private JPanel cards;
+
+    private SearchPanelObjects searchPanelObjects;
 
     public HomeScreen(){
         setLayout(new GridBagLayout());
@@ -25,7 +27,8 @@ public class HomeScreen extends JPanel{
         gbc.weighty = 0.1;
         JPanel searchPanel = new JPanel();
         searchPanel.setBackground(Color.orange);
-        searchPanel.add(new searchPanelObjects());
+        searchPanelObjects = new SearchPanelObjects();
+        searchPanel.add(searchPanelObjects);
         add(searchPanel, gbc);
 
         
@@ -48,8 +51,14 @@ public class HomeScreen extends JPanel{
         add(resultsPanel, gbc);
     }
 
-    private class searchPanelObjects extends JPanel{
-        private searchPanelObjects(){
+    private static class SearchPanelObjects extends JPanel{
+        private JTextField searchField;
+        private JButton searchButton;
+        private JButton gameReportsButton;
+        private JButton profileButton;
+        private JComboBox<String> searchFilter;
+        
+        private SearchPanelObjects(){
             setLayout(new GridBagLayout());
             GridBagConstraints gbc = new GridBagConstraints();
             
@@ -57,22 +66,42 @@ public class HomeScreen extends JPanel{
             gbc.gridx = 0;
             add(icon, gbc);
 
-            JTextField searchField = new JTextField(30);
+            searchField = new JTextField(30);
             gbc.gridx = 1;
             add(searchField, gbc);
 
-            JButton gameReportsButton = new JButton("🏆");
+            searchButton = new JButton("🔍");
+            searchButton.setActionCommand("SEARCH");
             gbc.gridx = 2;
+            add(searchButton);
+
+            gameReportsButton = new JButton("🏆");
+            gameReportsButton.setActionCommand("REPORTS");
+            gbc.gridx = 3;
             add(gameReportsButton, gbc);
 
             String[] filters = {"in Games", "in Users", "in Something"};
-            JComboBox<String> searchFilter = new JComboBox<>(filters);
-            gbc.gridx = 3;
+            searchFilter = new JComboBox<>(filters);
+            gbc.gridx = 4;
             add(searchFilter, gbc);
 
-            JButton profileButton = new JButton("😁");
-            gbc.gridx = 4;
+            profileButton = new JButton("😁");
+            gbc.gridx = 5;
             add(profileButton, gbc);
         }
+    }
+
+    public void addHomeScreenListener(ActionListener actionListener){
+        searchPanelObjects.searchButton.addActionListener(actionListener);
+        searchPanelObjects.gameReportsButton.addActionListener(actionListener);
+        searchPanelObjects.profileButton.addActionListener(actionListener);
+    }
+
+    public String getSearch(){
+        return new String(searchPanelObjects.searchField.getText());
+    }
+
+    public String getSearchFilter(){
+        return (String) searchPanelObjects.searchFilter.getSelectedItem();
     }
 }

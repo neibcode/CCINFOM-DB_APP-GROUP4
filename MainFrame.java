@@ -8,10 +8,8 @@ public class MainFrame extends JFrame{
     
     private CardLayout cardLayout;
     private JPanel cards;
-    public static void main(String[] args){
-        new MainFrame();
-    }
-    public MainFrame(){
+    
+    public MainFrame(WelcomeScreen welcomeScreen, HomeScreen homeScreen){
         //Window Settings
         this.setTitle("MOIST - Group 5");
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -24,11 +22,19 @@ public class MainFrame extends JFrame{
         cardLayout = new CardLayout();
         cards = new JPanel(cardLayout);
 
-        cards.add(new WelcomeScreen(), "WELCOME");
-        cards.add(new HomeScreen(), "HOME");
+        cards.add(welcomeScreen, "WELCOME");
+        cards.add(homeScreen, "HOME");
 
         add(cards);
-        cardLayout.show(cards, "HOME");
         this.setVisible(true);
+    }
+
+    public void showWelcomeScreen(){
+        cardLayout.show(cards, "WELCOME");
+    }
+
+    public void showHomeScreen(){
+        cardLayout.show(cards, "HOME");
+
     }
 }
