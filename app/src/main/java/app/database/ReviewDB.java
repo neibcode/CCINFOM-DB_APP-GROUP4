@@ -1,6 +1,6 @@
-package app.database;
+package app.src.main.java.app.database;
 
-import app.model.Review;
+import app.src.main.java.app.model.Review;
 
 import java.sql.*; //Filter down needed modules later
 import java.time.LocalDate;
@@ -41,14 +41,22 @@ public class ReviewDB {
     }
 
     // turned to a function so it can be called and not a saved connection bc we only need the connection for operations
-    private Connection connect() throws SQLException {
-        Connection connection = DriverManager.getConnection(URL);
+    private Connection connect() {
+        Connection connection = null;
 
         try {
-            Statement stmt = connection.createStatement();
-            stmt.execute("PRAGMA foreign_keys = ON"); // this lets sqlite reject the use of nonexistent foreign keys
+            connection = DriverManager.getConnection(URL);
+            try
+            {
+                Statement stmt = connection.createStatement();
+                stmt.execute("PRAGMA foreign_keys = ON"); // this lets sqlite reject the use of nonexistent foreign keys
+
+            } catch (SQLException e)
+            {
+                connection.close();
+                throw e;
+            }
         } catch (SQLException e) {
-            connection.close();
             System.out.println("Something has gone terribly wrong");
         }
 
@@ -58,7 +66,7 @@ public class ReviewDB {
     // helper to check if review exists
     // reviewExists return boolean/true if it does, 
     // accepts the userId and gameId to check if user has created a review on those fields before
-    public boolean reviewExists(int userId, int gameId) throws SQLException {
+    public boolean reviewExists(int userId, int gameId) {
         // select 1 = there is a 1 for every row that would exist
         String format = """
             SELECT 1 FROM reviews
@@ -75,6 +83,14 @@ public class ReviewDB {
                 return res.next(); // returns true if successfully lands in a row
             }
         }
+        catch (SQLException e)
+        {
+            System.out.println("Something has gone terribly wrong.");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
+
+        return false;
     }
 
     // addReview
@@ -82,7 +98,7 @@ public class ReviewDB {
     adds a review to the db
     - checks if review is empty, reviewtext and if review of user and gameid are existing already
     */
-    public void addReview(Review review) throws SQLException {
+    public void addReview(Review review) {
         if (review == null) {
             System.out.println("Review cannot be empty");
             // throw excpt?
@@ -117,19 +133,25 @@ public class ReviewDB {
 
             query.executeUpdate();
 
-            try {
-                Statement idStmt = connection.createStatement();
-                ResultSet res = idStmt.executeQuery("SELECT last_insert_rowid()");
 
-                if (res.next()) {
-                    review.setReviewId(res.getInt(1));
-                }
+            Statement idStmt = connection.createStatement();
+            ResultSet res = idStmt.executeQuery("SELECT last_insert_rowid()");
+
+            if (res.next()) {
+                review.setReviewId(res.getInt(1));
             }
+
+        }
+        catch (SQLException e)
+        {
+            System.out.println("Something has gone terribly wrong.");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
         }
     }
 
     // getReviewById
-    public Review getReviewById(int reviewId) throws SQLException {
+    public Review getReviewById(int reviewId) {
         String format = """
             SELECT *
             FROM reviews
@@ -147,13 +169,19 @@ public class ReviewDB {
                 }
             }
         }
+        catch (SQLException e)
+        {
+            System.out.println("Something has gone terribly wrong.");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
 
         return null; // not found
     }
 
     // getReviewsByGameId
     // gets all the reviews in a game
-    public ArrayList<Review> getReviewsByGameId(int gameId) throws SQLException {
+    public ArrayList<Review> getReviewsByGameId(int gameId) {
         String format = """
             SELECT * FROM reviews
             WHERE game_id = ?
@@ -173,13 +201,19 @@ public class ReviewDB {
                 }
             }
         }
+        catch (SQLException e)
+        {
+            System.out.println("Something has gone terribly wrong.");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
 
         return reviews;
     }
 
     // getReviewsByUserId
     // gets all the reviews made by a user
-    public ArrayList<Review> getReviewsByUserId(int userId) throws SQLException {
+    public ArrayList<Review> getReviewsByUserId(int userId) {
         String format = """
             SELECT * FROM reviews
             WHERE user_id = ?
@@ -199,17 +233,23 @@ public class ReviewDB {
                 }
             }
         }
+        catch (SQLException e)
+        {
+            System.out.println("Something has gone terribly wrong.");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
 
         return reviews;
     }
 
     // getAllReviews
-    public ArrayList<Review> getAllReviews() throws SQLException {
+    public ArrayList<Review> getAllReviews() {
         return filterReviews(null, null, null, null, "date_posted", false);
     }
 
     // filterReviews(title, reviewer(username), rating, dateposted, sortby, ascending)
-    public ArrayList<Review> filterReviews(String gameTitle, String reviewer, Double rating, LocalDate datePosted, String sortBy, boolean ascending) throws SQLException {
+    public ArrayList<Review> filterReviews(String gameTitle, String reviewer, Double rating, LocalDate datePosted, String sortBy, boolean ascending){
         ArrayList<Review> reviews = new ArrayList<>();
 
         ArrayList<ReviewDetails> details = filterReviewDetails(gameTitle, reviewer, rating, datePosted, sortBy, ascending);
@@ -223,7 +263,7 @@ public class ReviewDB {
     }
 
     // get specific review details with username/title
-    public ReviewDetails getReviewDetailsById(int reviewId) throws SQLException {
+    public ReviewDetails getReviewDetailsById(int reviewId) {
         String format = """
             SELECT r.*, u.username, g.game_title
             FROM reviews r
@@ -243,11 +283,17 @@ public class ReviewDB {
                 }
             }
         }
+        catch (SQLException e)
+        {
+            System.out.println("Something has gone terribly wrong.");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
 
         return null; // not found
     }
 
-    public ArrayList<ReviewDetails> getAllReviewDetails() throws SQLException {
+    public ArrayList<ReviewDetails> getAllReviewDetails() {
         return filterReviewDetails(null, null, null, null, "date_posted", false);
     }
 
@@ -258,7 +304,7 @@ public class ReviewDB {
     - validity checks for: title, username, rating, date posted, sortby how
     - ^^^ allows user almost complete control for filters
     */
-    public ArrayList<ReviewDetails> filterReviewDetails(String gameTitle, String reviewer, Double rating, LocalDate datePosted, String sortBy, boolean ascending) throws SQLException {
+    public ArrayList<ReviewDetails> filterReviewDetails(String gameTitle, String reviewer, Double rating, LocalDate datePosted, String sortBy, boolean ascending){
         StringBuilder format = new StringBuilder("""
             SELECT r.*, u.username, g.game_title
             FROM reviews r
@@ -320,36 +366,65 @@ public class ReviewDB {
                 }
             }
         }
+        catch (SQLException e)
+        {
+            System.out.println("Something has gone terribly wrong.");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
 
         return reviews;
     }
 
     // mapReview
-    private Review mapReview(ResultSet res) throws SQLException {
-        LocalDateTime datePosted = LocalDateTime.parse(
-                res.getString("date_posted").replace(" ", "T")
-        );
+    private Review mapReview(ResultSet res) {
 
-        return new Review(
-                res.getInt("review_id"),
-                res.getInt("user_id"),
-                res.getInt("game_id"),
-                res.getDouble("rating"),
-                res.getString("review_text"),
-                datePosted
-        );
+
+        try
+        {
+            LocalDateTime datePosted = LocalDateTime.parse(
+                res.getString("date_posted").replace(" ", "T")
+            );
+
+            return new Review(
+                    res.getInt("review_id"),
+                    res.getInt("user_id"),
+                    res.getInt("game_id"),
+                    res.getDouble("rating"),
+                    res.getString("review_text"),
+                    datePosted
+            );
+        }
+        catch (SQLException e)
+        {
+            System.out.println("Something has gone terribly wrong.");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
     // map review details
-    private ReviewDetails mapReviewDetails(ResultSet res)
-            throws SQLException {
+    private ReviewDetails mapReviewDetails(ResultSet res) {
 
         Review review = mapReview(res);
 
-        return new ReviewDetails(
-                review,
-                res.getString("username"),
-                res.getString("game_title")
-        );
+        try
+        {
+            return new ReviewDetails(
+                    review,
+                    res.getString("username"),
+                    res.getString("game_title")
+            );
+        }
+        catch (SQLException e)
+        {
+            System.out.println("Something has gone terribly wrong.");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
+
+        return null;
     }
 }

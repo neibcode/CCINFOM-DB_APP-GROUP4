@@ -1,7 +1,7 @@
-package app.controller;
+package app.src.main.java.app.controller;
 
-import app.database.GameDB;
-import app.model.Game;
+import app.src.main.java.app.database.GameDB;
+import app.src.main.java.app.model.Game;
 
 public class GameController {
 

@@ -1,4 +1,4 @@
-package app.database;
+package app.src.main.java.app.database;
 
 import java.sql.*;
 import java.time.LocalDate;
@@ -57,14 +57,22 @@ public class ReportDB {
     }
 
     // turned to a function so it can be called and not a saved connection bc we only need the connection for operations
-    private Connection connect() throws SQLException {
-        Connection connection = DriverManager.getConnection(URL);
+    private Connection connect() {
+        Connection connection = null;
 
         try {
-            Statement stmt = connection.createStatement();
-            stmt.execute("PRAGMA foreign_keys = ON"); // this lets sqlite reject the use of nonexistent foreign keys
+            connection = DriverManager.getConnection(URL);
+            try
+            {
+                Statement stmt = connection.createStatement();
+                stmt.execute("PRAGMA foreign_keys = ON"); // this lets sqlite reject the use of nonexistent foreign keys
+
+            } catch (SQLException e)
+            {
+                connection.close();
+                throw e;
+            }
         } catch (SQLException e) {
-            connection.close();
             System.out.println("Something has gone terribly wrong");
         }
 
@@ -77,7 +85,7 @@ public class ReportDB {
     - dates are validated and topN games are too
     - genre/publisher are allowed to be empty LIKE %searchparam% is used to filter
     */
-    public ArrayList<TopGameDetails> getTopGamesReport(LocalDate startDate, LocalDate endDate, int topN, String genre, String publisher) throws SQLException {
+    public ArrayList<TopGameDetails> getTopGamesReport(LocalDate startDate, LocalDate endDate, int topN, String genre, String publisher) {
         if (startDate == null || endDate == null) {
             System.out.println("Start and end dates cannot be empty");
             // throw excpt here?
@@ -147,6 +155,12 @@ public class ReportDB {
                         ));
                 }
             }
+        }
+        catch (SQLException e)
+        {
+            System.out.println("Something has gone terribly wrong.");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
         }
 
         return report;

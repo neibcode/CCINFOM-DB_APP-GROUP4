@@ -1,6 +1,6 @@
-package app.database;
+package app.src.main.java.app.database;
 
-import app.model.User;
+import app.src.main.java.app.model.User;
 
 import org.mindrot.jbcrypt.BCrypt;
 
@@ -12,14 +12,22 @@ public class UserDB {
     private static final String URL = "jdbc:sqlite:gamereview.db";
 
     // turned to a function so it can be called and not a saved connection bc we only need the connection for operations
-    private Connection connect() throws SQLException {
-        Connection connection = DriverManager.getConnection(URL);
+    private Connection connect() {
+        Connection connection = null;
 
         try {
-            Statement stmt = connection.createStatement();
-            stmt.execute("PRAGMA foreign_keys = ON"); // this lets sqlite reject the use of nonexistent foreign keys
+            connection = DriverManager.getConnection(URL);
+            try
+            {
+                Statement stmt = connection.createStatement();
+                stmt.execute("PRAGMA foreign_keys = ON"); // this lets sqlite reject the use of nonexistent foreign keys
+
+            } catch (SQLException e)
+            {
+                connection.close();
+                throw e;
+            }
         } catch (SQLException e) {
-            connection.close();
             System.out.println("Something has gone terribly wrong");
         }
 
@@ -27,7 +35,7 @@ public class UserDB {
     }
 
     // create user to db
-    public void addUser(String username, String password) throws SQLException {
+    public void addUser(String username, String password) {
         if (username == null || password == null || username.isBlank() || password.isEmpty()) {
             System.out.println("Username and password are required");
             // throw exception?
@@ -47,9 +55,15 @@ public class UserDB {
 
             query.executeQuery();
         }
+        catch (SQLException e)
+        {
+            System.out.println("Something has gone terribly wrong.");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
     }
 
-    public User getUserById(int userId) throws SQLException {
+    public User getUserById(int userId) {
         // DONT GET HASH we dont store it
         String format = """
             SELECT user_id, username, date_joined, account_status
@@ -68,11 +82,17 @@ public class UserDB {
                     }
                 }
             }
+            catch (SQLException e)
+            {
+                System.out.println("Something has gone terribly wrong.");
+                System.out.println(e.getMessage());
+                e.printStackTrace();
+            }
 
         return null; // not found
     }
 
-    public User getUserByUsername(String username) throws SQLException {
+    public User getUserByUsername(String username) {
         String format = """
             SELECT user_id, username, date_joined, account_status
             FROM users
@@ -89,16 +109,22 @@ public class UserDB {
                         return mapUser(res);
                     }
                 }
-            }
+        }
+        catch (SQLException e)
+        {
+            System.out.println("Something has gone terribly wrong.");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
 
         return null; // not found
     }
 
-    public ArrayList<User> getAllUsers() throws SQLException {
+    public ArrayList<User> getAllUsers() {
         return filterUsers("");
     }
 
-    public ArrayList<User> filterUsers(String username) throws SQLException {
+    public ArrayList<User> filterUsers(String username) {
         String format = """
             SELECT user_id, username, date_joined, account_status
             FROM users
@@ -121,6 +147,12 @@ public class UserDB {
                 }
             }
         }
+        catch (SQLException e)
+        {
+            System.out.println("Something has gone terribly wrong.");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
 
         return users;
     }
@@ -129,7 +161,7 @@ public class UserDB {
     checks if user exist by selecting including the hash BUT the hash grabbed is not stored anywhere
     - it is only used to check if 
     */
-    public User login(String username, String password) throws SQLException {
+    public User login(String username, String password) {
         if (username == null || password == null) {
             return null;
         }
@@ -155,6 +187,12 @@ public class UserDB {
                 }
             }
         }
+        catch (SQLException e)
+        {
+            System.out.println("Something has gone terribly wrong.");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
 
         return null; // not found/invalid
     }
@@ -166,7 +204,7 @@ public class UserDB {
     - then compares if the currentpassword inputted for changing it is the same as the hash stored
     - new password is hashed and stored if valid by update query
     */
-    public boolean updatePassword(int userId, String currentPassword, String newPassword) throws SQLException {
+    public boolean updatePassword(int userId, String currentPassword, String newPassword) {
         if (newPassword == null || newPassword.isEmpty()) {
             System.out.println("New password cannot be empty");
             // throw excpt?
@@ -191,12 +229,11 @@ public class UserDB {
             try (PreparedStatement query = connection.prepareStatement(format)) {
                 query.setInt(1, userId);
 
-                try {
-                    res = query.executeQuery();
-                    if (!res.next()) {
-                        return false; // no acct found
-                    }
+                res = query.executeQuery();
+                if (!res.next()) {
+                    return false; // no acct found
                 }
+
             }
 
             // if invalid check, current pass entered is wrong
@@ -219,10 +256,18 @@ public class UserDB {
                 return query.executeUpdate() > 0;
             }
         }
+        catch (SQLException e)
+        {
+            System.out.println("Something has gone terribly wrong.");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
+
+        return false;
     }
 
     // update query used to change the value of acc status
-    public boolean deleteUser(int userId) throws SQLException {
+    public boolean deleteUser(int userId) {
         String format = """
             UPDATE users
             SET account_status = 'Deleted'
@@ -237,18 +282,36 @@ public class UserDB {
 
             return query.executeUpdate() > 0;
         }
+        catch (SQLException e)
+        {
+            System.out.println("Something has gone terribly wrong.");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
+
+        return false;
     }
 
     // similar to how it worked in game
-    private User mapUser(ResultSet res) throws SQLException {
+    private User mapUser(ResultSet res) {
         // to format timestamp into a localdatetime, get timestamp -> replace " " to "T" to follow LocalDateTime parsing format, YYYY-MM-DDTHH:MM:SS
-        LocalDateTime dateJoined = LocalDateTime.parse(res.getString("date_joined").replace(" ", "T"));
+        try
+        {
+            LocalDateTime dateJoined = LocalDateTime.parse(res.getString("date_joined").replace(" ", "T"));
+            return new User(
+                    res.getInt("user_id"),
+                    res.getString("username"),
+                    dateJoined,
+                    res.getString("account_status")
+            );
+        }
+        catch (SQLException e)
+        {
+            System.out.println("Something has gone terribly wrong.");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
 
-        return new User(
-            res.getInt("user_id"),
-            res.getString("username"),
-            dateJoined,
-            res.getString("account_status")
-        );
+        return null;
     }
 }

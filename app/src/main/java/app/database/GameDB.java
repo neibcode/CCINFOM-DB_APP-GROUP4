@@ -1,6 +1,6 @@
-package app.database;
+package app.src.main.java.app.database;
 
-import app.model.Game;
+import app.src.main.java.app.model.Game;
 
 import java.sql.*; //Filter down needed modules later
 import java.time.LocalDate;
@@ -10,14 +10,22 @@ public class GameDB {
     private static final String URL = "jdbc:sqlite:gamereview.db";
 
     // turned to a function so it can be called and not a saved connection bc we only need the connection for operations
-    private Connection connect() throws SQLException {
-        Connection connection = DriverManager.getConnection(URL);
+    private Connection connect() {
+        Connection connection = null;
 
         try {
-            Statement stmt = connection.createStatement();
-            stmt.execute("PRAGMA foreign_keys = ON"); // this lets sqlite reject the use of nonexistent foreign keys
+             connection = DriverManager.getConnection(URL);
+            try
+            {
+                Statement stmt = connection.createStatement();
+                stmt.execute("PRAGMA foreign_keys = ON"); // this lets sqlite reject the use of nonexistent foreign keys
+
+            } catch (SQLException e)
+            {
+                connection.close();
+                throw e;
+            }
         } catch (SQLException e) {
-            connection.close();
             System.out.println("Something has gone terribly wrong");
         }
 
@@ -57,24 +65,27 @@ public class GameDB {
 
             query.executeUpdate();
 
-            try {
-                // for getting the id of recently made game
-                Statement idStmt = connection.createStatement();
-                ResultSet res = idStmt.executeQuery("SELECT last_insert_rowid()");
-
-                // if there is new game made
-                if (res.next()) {
-                    // sets the retrieved id to the stored game's id
-                    game.setGameId(res.getInt(1));
-                }
+            // for getting the id of recently made game
+            Statement idStmt = connection.createStatement();
+            ResultSet res = idStmt.executeQuery("SELECT last_insert_rowid()");
+            // if there is new game made
+            if (res.next()) {
+                // sets the retrieved id to the stored game's id
+                game.setGameId(res.getInt(1));
             }
+        }
+        catch (SQLException e)
+        {
+            System.out.println("Something has gone terribly wrong.");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
         }
     }
 
     /*
     returns a game object using a gameid
     */
-    public Game getGameById(int gameId) throws SQLException {
+    public Game getGameById(int gameId) {
         String format = "SELECT * FROM games WHERE game_id = ?";
 
         try (Connection connection = connect()) {
@@ -88,6 +99,13 @@ public class GameDB {
                 }
             }
         }
+
+        catch (SQLException e)
+        {
+            System.out.println("Something has gone terribly wrong.");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
         return null;
     }
 
@@ -95,13 +113,13 @@ public class GameDB {
     gets the arraylist of all the games without any filter
     - archived is still hidden.
     */
-    public ArrayList<Game> getAllGames() throws SQLException {
+    public ArrayList<Game> getAllGames() {
         // filter games by nothin
         return filterGames(null, null, null, null, false);
     }
 
     // update game returns if updated or not
-    public boolean updateGame(Game game) throws SQLException {
+    public boolean updateGame(Game game) {
         String format = """
             UPDATE games
             SET game_title = ?,
@@ -126,11 +144,19 @@ public class GameDB {
 
             return query.executeUpdate() > 0; // if updated more than 0 values
         }
+        catch (SQLException e)
+        {
+            System.out.println("Something has gone terribly wrong.");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
+
+        return false;
     }
 
     // archive game
     // changes the state of a game given a gameId
-    public boolean archiveGame(int gameId) throws SQLException {
+    public boolean archiveGame(int gameId) {
         String format = """
             UPDATE games
             SET archived = 1
@@ -143,10 +169,18 @@ public class GameDB {
 
             return query.executeUpdate() > 0; // if updated return true
         }
+        catch (SQLException e)
+        {
+            System.out.println("Something has gone terribly wrong.");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
+
+        return false;
     }
 
     // filter games, used for lookup and viewing list of games
-    public ArrayList<Game> filterGames(String title, String genre, String publisher, LocalDate releaseDate, Boolean archived) throws SQLException {
+    public ArrayList<Game> filterGames(String title, String genre, String publisher, LocalDate releaseDate, Boolean archived) {
         StringBuilder format = new StringBuilder("SELECT * FROM games WHERE 1 = 1");
         ArrayList<Object> parameters = new ArrayList<>(); // stores the parameters that are used to filter search
         // this is done so that setting prepared statement is parametarized
@@ -196,20 +230,37 @@ public class GameDB {
                 }
             }
         }
+        catch (SQLException e)
+        {
+            System.out.println("Something has gone terribly wrong.");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
 
         return games;
     }
 
     // turns a db row into a game object
-    private Game mapGame(ResultSet res) throws SQLException {
-        return new Game(
-            res.getInt("game_id"),
-            res.getString("game_title"),
-            res.getString("description"),
-            res.getString("genre"),
-            res.getString("publisher"),
-            LocalDate.parse(res.getString("release_date")),
-            res.getInt("archived") == 1 // if 1 true else false boolean
-        );
+    private Game mapGame(ResultSet res) {
+        try
+        {
+            return new Game(
+                    res.getInt("game_id"),
+                    res.getString("game_title"),
+                    res.getString("description"),
+                    res.getString("genre"),
+                    res.getString("publisher"),
+                    LocalDate.parse(res.getString("release_date")),
+                    res.getInt("archived") == 1 // if 1 true else false boolean
+            );
+        }
+        catch (SQLException e)
+        {
+            System.out.println("Something has gone terribly wrong.");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
+
+        return null;
     }
 }

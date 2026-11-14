@@ -1,6 +1,8 @@
 #IntelliJ filler
 /.idea/
 /CCINFOM-DB_APP-GROUP4.iml
+/lib/
+/out/
 
 # vscode config
 /.vscode/
@@ -26,3 +28,5 @@ nbactions-private.xml
 *.db-wal
 *.db-shm
 *.db-journal
+
+
