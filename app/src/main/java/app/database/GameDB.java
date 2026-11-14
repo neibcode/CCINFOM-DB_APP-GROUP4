@@ -5,7 +5,6 @@ import app.model.Game;
 import java.sql.*; //Filter down needed modules later
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.List;
 
 public class GameDB {
     private static final String URL = "jdbc:sqlite:gamereview.db";
@@ -26,6 +25,10 @@ public class GameDB {
     }
 
     // adds a game, called in controller
+    /*
+    - validates if game is empty
+    - Inserts a game given valid values to the db
+    */
     public void addGame(Game game) {
         if (game == null) {
             System.out.println("Game cannot be empty");
@@ -68,6 +71,9 @@ public class GameDB {
         }
     }
 
+    /*
+    returns a game object using a gameid
+    */
     public Game getGameById(int gameId) throws SQLException {
         String format = "SELECT * FROM games WHERE game_id = ?";
 
@@ -85,7 +91,11 @@ public class GameDB {
         return null;
     }
 
-    public List<Game> getAllGames() throws SQLException {
+    /*
+    gets the arraylist of all the games without any filter
+    - archived is still hidden.
+    */
+    public ArrayList<Game> getAllGames() throws SQLException {
         // filter games by nothin
         return filterGames(null, null, null, null, false);
     }
@@ -119,6 +129,7 @@ public class GameDB {
     }
 
     // archive game
+    // changes the state of a game given a gameId
     public boolean archiveGame(int gameId) throws SQLException {
         String format = """
             UPDATE games
@@ -134,7 +145,7 @@ public class GameDB {
         }
     }
 
-    // filter games
+    // filter games, used for lookup and viewing list of games
     public ArrayList<Game> filterGames(String title, String genre, String publisher, LocalDate releaseDate, Boolean archived) throws SQLException {
         StringBuilder format = new StringBuilder("SELECT * FROM games WHERE 1 = 1");
         ArrayList<Object> parameters = new ArrayList<>(); // stores the parameters that are used to filter search

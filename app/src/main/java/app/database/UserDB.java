@@ -5,7 +5,6 @@ import app.model.User;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.sql.*; //Filter down needed modules later
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
@@ -40,13 +39,11 @@ public class UserDB {
             VALUES (?, ?)
             """;
 
-        String hash = BCrypt.hashpw(password, BCrypt.gensalt());
-
         try (Connection connection = connect()) {
             PreparedStatement query = connection.prepareStatement(format);
 
             query.setString(1, username.trim());
-            query.setString(2, hash);
+            query.setString(2, BCrypt.hashpw(password, BCrypt.gensalt()));
 
             query.executeQuery();
         }
@@ -128,6 +125,10 @@ public class UserDB {
         return users;
     }
 
+    /*
+    checks if user exist by selecting including the hash BUT the hash grabbed is not stored anywhere
+    - it is only used to check if 
+    */
     public User login(String username, String password) throws SQLException {
         if (username == null || password == null) {
             return null;
@@ -148,9 +149,7 @@ public class UserDB {
             try (ResultSet res = query.executeQuery()) {
                 if (res.next()) {
                     // verify password once user is found
-                    String hash = res.getString("password_hash");
-
-                    if (BCrypt.checkpw(password, hash)) {
+                    if (BCrypt.checkpw(password, res.getString("password_hash"))) {
                         return mapUser(res);
                     }
                 }
@@ -160,6 +159,13 @@ public class UserDB {
         return null; // not found/invalid
     }
 
+    // update query used to change the value of stored hash
+    /*
+    - null/empty checks for input fields
+    - checks first if user exists by calling select
+    - then compares if the currentpassword inputted for changing it is the same as the hash stored
+    - new password is hashed and stored if valid by update query
+    */
     public boolean updatePassword(int userId, String currentPassword, String newPassword) throws SQLException {
         if (newPassword == null || newPassword.isEmpty()) {
             System.out.println("New password cannot be empty");
@@ -171,7 +177,7 @@ public class UserDB {
             return false;
         }
 
-        
+        ResultSet res;
         try (Connection connection = connect()) {
             String format = """
                 SELECT password_hash
@@ -185,21 +191,18 @@ public class UserDB {
             try (PreparedStatement query = connection.prepareStatement(format)) {
                 query.setInt(1, userId);
 
-                try (ResultSet res = query.executeQuery()) {
+                try {
+                    res = query.executeQuery();
                     if (!res.next()) {
                         return false; // no acct found
                     }
-
-                    hash = res.getString("password_hash"); // old hash
                 }
             }
 
             // if invalid check, current pass entered is wrong
-            if (!BCrypt.checkpw(currentPassword, hash)) {
+            if (!BCrypt.checkpw(currentPassword, res.getString("password_hash"))) {
                 return false;
             }
-
-            String newHash = BCrypt.hashpw(newPassword, BCrypt.gensalt());
 
             String update = """
                 UPDATE users
@@ -209,7 +212,7 @@ public class UserDB {
                 """;
 
             try (PreparedStatement query = connection.prepareStatement(update)) {
-                query.setString(1, newHash);
+                query.setString(1, BCrypt.hashpw(newPassword, BCrypt.gensalt()));
                 query.setInt(2, userId);
 
                 // check if properly updated the values, return true if updated
@@ -218,6 +221,7 @@ public class UserDB {
         }
     }
 
+    // update query used to change the value of acc status
     public boolean deleteUser(int userId) throws SQLException {
         String format = """
             UPDATE users

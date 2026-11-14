@@ -10,6 +10,10 @@ public class ReportDB {
     private static final String URL = "jdbc:sqlite:gamereview.db";
 
     // data class storage
+    /*
+    used to store the values for the top games
+    - not separated into a different class since it only contains attributes mainly
+    */
     public static class TopGameDetails {
         private int gameId;
         private String gameTitle;
@@ -67,6 +71,12 @@ public class ReportDB {
         return connection;
     }
 
+    /*
+    returns an arraylist of all the top games's details
+    - gameId will be given with the details
+    - dates are validated and topN games are too
+    - genre/publisher are allowed to be empty LIKE %searchparam% is used to filter
+    */
     public ArrayList<TopGameDetails> getTopGamesReport(LocalDate startDate, LocalDate endDate, int topN, String genre, String publisher) throws SQLException {
         if (startDate == null || endDate == null) {
             System.out.println("Start and end dates cannot be empty");

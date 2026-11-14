@@ -12,6 +12,10 @@ public class ReviewDB {
 
     // nested class to store additional details (like a data class for kotlin) 
     // mainly used for displaying reviewer username and game title in the review since not in Review model
+    /*
+    used to store the values for the reviews
+    - not separated into a different class since it only contains attributes mainly
+    */
     public static class ReviewDetails {
         private Review review;
         private String username;
@@ -52,9 +56,10 @@ public class ReviewDB {
     }
 
     // helper to check if review exists
-    // reviewExists return boolean/true if it does
+    // reviewExists return boolean/true if it does, 
+    // accepts the userId and gameId to check if user has created a review on those fields before
     public boolean reviewExists(int userId, int gameId) throws SQLException {
-        // select 1 = if there is a 1 for every row that would exist
+        // select 1 = there is a 1 for every row that would exist
         String format = """
             SELECT 1 FROM reviews
             WHERE user_id = ? AND game_id = ?
@@ -67,12 +72,16 @@ public class ReviewDB {
             query.setInt(2, gameId);
 
             try (ResultSet res = query.executeQuery()) {
-                return res.next(); // returns true of successfully lands in a row
+                return res.next(); // returns true if successfully lands in a row
             }
         }
     }
 
     // addReview
+    /*
+    adds a review to the db
+    - checks if review is empty, reviewtext and if review of user and gameid are existing already
+    */
     public void addReview(Review review) throws SQLException {
         if (review == null) {
             System.out.println("Review cannot be empty");
@@ -143,6 +152,7 @@ public class ReviewDB {
     }
 
     // getReviewsByGameId
+    // gets all the reviews in a game
     public ArrayList<Review> getReviewsByGameId(int gameId) throws SQLException {
         String format = """
             SELECT * FROM reviews
@@ -168,6 +178,7 @@ public class ReviewDB {
     }
 
     // getReviewsByUserId
+    // gets all the reviews made by a user
     public ArrayList<Review> getReviewsByUserId(int userId) throws SQLException {
         String format = """
             SELECT * FROM reviews
@@ -240,6 +251,13 @@ public class ReviewDB {
         return filterReviewDetails(null, null, null, null, "date_posted", false);
     }
 
+    /*
+    filters the reviewdetails
+    - this allows the app to filter by reviewer username and gametitle
+        - since review model does not store its own user's username and game's title reviewdetails was used
+    - validity checks for: title, username, rating, date posted, sortby how
+    - ^^^ allows user almost complete control for filters
+    */
     public ArrayList<ReviewDetails> filterReviewDetails(String gameTitle, String reviewer, Double rating, LocalDate datePosted, String sortBy, boolean ascending) throws SQLException {
         StringBuilder format = new StringBuilder("""
             SELECT r.*, u.username, g.game_title

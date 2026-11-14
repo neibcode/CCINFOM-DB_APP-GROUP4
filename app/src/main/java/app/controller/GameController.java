@@ -8,7 +8,7 @@ public class GameController {
     private GameDB gameDB = new GameDB();
     private Game selectedGame;
 
-    // will work on this once complete na GUI and DB side
+    // will try to work on this later
     public void handleAddGame() {
         try {
             // Game game = get info from input form
