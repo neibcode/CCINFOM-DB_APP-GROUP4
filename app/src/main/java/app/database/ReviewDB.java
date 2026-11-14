@@ -1,6 +1,11 @@
 package app.database;
 
+import app.model.Review;
+
 import java.sql.*; //Filter down needed modules later
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 
 public class ReviewDB {
     private static final String URL = "jdbc:sqlite:gamereview.db";
@@ -19,4 +24,21 @@ public class ReviewDB {
 
         return connection;
     }
+
+    // helper to check if review exists
+    // reviewExists return boolean/true if it does
+
+    // addReview
+
+    // getReviewById
+
+    // getReviewByGameId
+
+    // getReviewsByUserId
+
+    // getAllReviews
+
+    // filterReviews(title, reviewer(username), rating, dateposted, sortby, ascending)
+
+    // mapReview
 }
