@@ -1,3 +1,25 @@
 #IntelliJ filler
 /.idea/
 /CCINFOM-DB_APP-GROUP4.iml
+
+# Maven build output
+target/
+**/target/
+
+# NetBeans local configuration
+nbproject/private/
+**/nbproject/private/
+nbactions-private.xml
+
+# java compiled files
+*.class
+
+# java temporary files
+*.log
+*.tmp
+*.bak
+
+# temp sqlite files
+*.db-wal
+*.db-shm
+*.db-journal
