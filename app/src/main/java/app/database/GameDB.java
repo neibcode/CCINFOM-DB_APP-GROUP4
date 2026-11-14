@@ -27,6 +27,12 @@ public class GameDB {
 
     // adds a game, called in controller
     public void addGame(Game game) {
+        if (game == null) {
+            System.out.println("Game cannot be empty");
+            // throw excpt?
+            return;
+        }
+
         // triple quotes = text blocks no need for using the + to concat
         String format = """
                     INSERT INTO games
