@@ -1,6 +1,13 @@
 package app.database;
 
+import app.model.User;
+
+import org.mindrot.jbcrypt.BCrypt;
+
 import java.sql.*; //Filter down needed modules later
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 
 public class UserDB {
     private static final String URL = "jdbc:sqlite:gamereview.db";
@@ -18,5 +25,226 @@ public class UserDB {
         }
 
         return connection;
+    }
+
+    // create user to db
+    public void addUser(String username, String password) throws SQLException {
+        if (username == null || password == null || username.isBlank() || password.isEmpty()) {
+            System.out.println("Username and password are required");
+            // throw exception?
+            return;
+        }
+
+        String format = """
+            INSERT INTO users (username, password_hash)
+            VALUES (?, ?)
+            """;
+
+        String hash = BCrypt.hashpw(password, BCrypt.gensalt());
+
+        try (Connection connection = connect()) {
+            PreparedStatement query = connection.prepareStatement(format);
+
+            query.setString(1, username.trim());
+            query.setString(2, hash);
+
+            query.executeQuery();
+        }
+    }
+
+    public User getUserById(int userId) throws SQLException {
+        // DONT GET HASH we dont store it
+        String format = """
+            SELECT user_id, username, date_joined, account_status
+            FROM users
+            WHERE user_id = ?
+            """;
+
+            try (Connection connection = connect()) {
+                PreparedStatement query = connection.prepareStatement(format);
+
+                query.setInt(1, userId);
+
+                try (ResultSet res = query.executeQuery()) {
+                    if (res.next()) {
+                        return mapUser(res);
+                    }
+                }
+            }
+
+        return null; // not found
+    }
+
+    public User getUserByUsername(String username) throws SQLException {
+        String format = """
+            SELECT user_id, username, date_joined, account_status
+            FROM users
+            WHERE username = ?
+            """;
+
+        try (Connection connection = connect()) {
+                PreparedStatement query = connection.prepareStatement(format);
+
+                query.setString(1, username);
+
+                try (ResultSet res = query.executeQuery()) {
+                    if (res.next()) {
+                        return mapUser(res);
+                    }
+                }
+            }
+
+        return null; // not found
+    }
+
+    public ArrayList<User> getAllUsers() throws SQLException {
+        return filterUsers("");
+    }
+
+    public ArrayList<User> filterUsers(String username) throws SQLException {
+        String format = """
+            SELECT user_id, username, date_joined, account_status
+            FROM users
+            WHERE username LIKE ?
+            ORDER BY username COLLATE NOCASE
+            """; // collate nocase = ignores case when comparing strings
+
+        ArrayList<User> users = new ArrayList<>();
+
+        try (Connection connection = connect()) {
+            PreparedStatement query = connection.prepareStatement(format);
+
+            // get the search value after trimming and checking if null
+            String search = username == null ? "" : username.trim();
+            query.setString(1, "%" + search + "%"); // %search% = check if search is anywhere in the username
+
+            try (ResultSet res = query.executeQuery()) {
+                while (res.next()) {
+                    users.add(mapUser(res));
+                }
+            }
+        }
+
+        return users;
+    }
+
+    public User login(String username, String password) throws SQLException {
+        if (username == null || password == null) {
+            return null;
+        }
+
+        String format = """
+            SELECT user_id, username, password_hash, date_joined, account_status
+            FROM users
+            WHERE username = ?
+            AND account_status = 'Active'
+            """;
+
+        try (Connection connection = connect()) {
+            PreparedStatement query = connection.prepareStatement(format);
+
+            query.setString(1, username.trim());
+
+            try (ResultSet res = query.executeQuery()) {
+                if (res.next()) {
+                    // verify password once user is found
+                    String hash = res.getString("password_hash");
+
+                    if (BCrypt.checkpw(password, hash)) {
+                        return mapUser(res);
+                    }
+                }
+            }
+        }
+
+        return null; // not found/invalid
+    }
+
+    public boolean updatePassword(int userId, String currentPassword, String newPassword) throws SQLException {
+        if (newPassword == null || newPassword.isEmpty()) {
+            System.out.println("New password cannot be empty");
+            // throw excpt?
+            return false;
+        }
+
+        if (currentPassword == null) {
+            return false;
+        }
+
+        
+        try (Connection connection = connect()) {
+            String format = """
+                SELECT password_hash
+                FROM users
+                WHERE user_id = ?
+                AND account_status = 'Active'
+                """;
+
+            String hash;
+
+            try (PreparedStatement query = connection.prepareStatement(format)) {
+                query.setInt(1, userId);
+
+                try (ResultSet res = query.executeQuery()) {
+                    if (!res.next()) {
+                        return false; // no acct found
+                    }
+
+                    hash = res.getString("password_hash"); // old hash
+                }
+            }
+
+            // if invalid check, current pass entered is wrong
+            if (!BCrypt.checkpw(currentPassword, hash)) {
+                return false;
+            }
+
+            String newHash = BCrypt.hashpw(newPassword, BCrypt.gensalt());
+
+            String update = """
+                UPDATE users
+                SET password_hash = ?
+                WHERE user_id = ?
+                AND account_status = 'Active'
+                """;
+
+            try (PreparedStatement query = connection.prepareStatement(update)) {
+                query.setString(1, newHash);
+                query.setInt(2, userId);
+
+                // check if properly updated the values, return true if updated
+                return query.executeUpdate() > 0;
+            }
+        }
+    }
+
+    public boolean deleteUser(int userId) throws SQLException {
+        String format = """
+            UPDATE users
+            SET account_status = 'Deleted'
+            WHERE user_id = ?
+            AND account_status = 'Active'
+            """;
+
+        try (Connection connection = connect()) {
+            PreparedStatement query = connection.prepareStatement(format);
+
+            query.setInt(1, userId);
+
+            return query.executeUpdate() > 0;
+        }
+    }
+
+    // similar to how it worked in game
+    private User mapUser(ResultSet res) throws SQLException {
+        // to format timestamp into a localdatetime, get timestamp -> replace " " to "T" to follow LocalDateTime parsing format, YYYY-MM-DDTHH:MM:SS
+        LocalDateTime dateJoined = LocalDateTime.parse(res.getString("date_joined").replace(" ", "T"));
+
+        return new User(
+            res.getInt("user_id"),
+            res.getString("username"),
+            dateJoined,
+            res.getString("account_status")
+        );
     }
 }

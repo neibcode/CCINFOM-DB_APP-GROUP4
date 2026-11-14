@@ -1,7 +1,5 @@
 package app.database;
 
-import app.model.User;
-
 import java.sql.*; //Filter down needed modules later
 
 public class ReviewDB {

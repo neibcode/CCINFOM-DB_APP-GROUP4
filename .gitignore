@@ -2,11 +2,14 @@
 /.idea/
 /CCINFOM-DB_APP-GROUP4.iml
 
-# Maven build output
+# vscode config
+/.vscode/
+
+# maven build output
 target/
 **/target/
 
-# NetBeans local configuration
+# netbeans local configuration
 nbproject/private/
 **/nbproject/private/
 nbactions-private.xml
