@@ -1,6 +1,7 @@
-package app.src.main.java.app.database;
+package app.database;
+// since this is a maven project the source root is normally src/main/java, so app.db lngs
 
-import app.src.main.java.app.model.Game;
+import app.model.Game;
 
 import java.sql.*; //Filter down needed modules later
 import java.time.LocalDate;
@@ -10,11 +11,11 @@ public class GameDB {
     private static final String URL = "jdbc:sqlite:gamereview.db";
 
     // turned to a function so it can be called and not a saved connection bc we only need the connection for operations
-    private Connection connect() {
+    private Connection connect() throws SQLException {
         Connection connection = null;
 
         try {
-             connection = DriverManager.getConnection(URL);
+            connection = DriverManager.getConnection(URL);
             try
             {
                 Statement stmt = connection.createStatement();
@@ -36,12 +37,12 @@ public class GameDB {
     /*
     - validates if game is empty
     - Inserts a game given valid values to the db
+    - returns boolean to help with validity/success flags in controller since theres no exceptions thrown
     */
-    public void addGame(Game game) {
+    public boolean addGame(Game game) {
         if (game == null) {
             System.out.println("Game cannot be empty");
-            // throw excpt?
-            return;
+            return false;
         }
 
         // triple quotes = text blocks no need for using the + to concat
@@ -66,12 +67,18 @@ public class GameDB {
             query.executeUpdate();
 
             // for getting the id of recently made game
-            Statement idStmt = connection.createStatement();
-            ResultSet res = idStmt.executeQuery("SELECT last_insert_rowid()");
-            // if there is new game made
-            if (res.next()) {
-                // sets the retrieved id to the stored game's id
-                game.setGameId(res.getInt(1));
+            try (Statement idStmt = connection.createStatement();
+                 ResultSet res = idStmt.executeQuery("SELECT last_insert_rowid()")) {
+                // if there is new game made
+                if (res.next()) {
+                    // sets the retrieved id to the stored game's id
+                    game.setGameId(res.getInt(1));
+                }
+            } catch (SQLException e) {
+                System.out.println("Something has gone terribly wrong.");
+                System.out.println(e.getMessage());
+                e.printStackTrace();
+                return false;
             }
         }
         catch (SQLException e)
@@ -79,7 +86,10 @@ public class GameDB {
             System.out.println("Something has gone terribly wrong.");
             System.out.println(e.getMessage());
             e.printStackTrace();
+            return false;
         }
+        // success
+        return true;
     }
 
     /*
@@ -212,7 +222,7 @@ public class GameDB {
 
         format.append (" ORDER BY game_title COLLATE NOCASE, game_id");
 
-        ArrayList<Game> games = new ArrayList();
+        ArrayList<Game> games = new ArrayList<>();
         // add the games based on parameters gathered
         try (Connection connection = connect()) {
             PreparedStatement query = connection.prepareStatement(format.toString());

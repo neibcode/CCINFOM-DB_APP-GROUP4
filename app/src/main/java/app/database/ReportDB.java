@@ -1,5 +1,5 @@
-package app.src.main.java.app.database;
-
+package app.database;
+// since this is a maven project the source root is normally src/main/java, so app.db lngs
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -57,7 +57,7 @@ public class ReportDB {
     }
 
     // turned to a function so it can be called and not a saved connection bc we only need the connection for operations
-    private Connection connect() {
+    private Connection connect() throws SQLException {
         Connection connection = null;
 
         try {
@@ -114,6 +114,9 @@ public class ReportDB {
 
         ArrayList<Object> parameters = new ArrayList<>();
 
+        parameters.add(startDate.toString());
+        parameters.add(endDate.toString());
+
         if (genre != null && !genre.isBlank()) {
             format.append(" AND g.genre LIKE ?");
             parameters.add("%" + genre.trim() + "%");
@@ -126,7 +129,7 @@ public class ReportDB {
 
         // group/sortby
         format.append("""
-            GROUP BY g.game_id, g.game_title, g.genre, g.publisher
+            \nGROUP BY g.game_id, g.game_title, g.genre, g.publisher
             ORDER BY average_rating DESC, review_count DESC, g.game_id ASC
             LIMIT ?
             """);

@@ -1,6 +1,7 @@
-package app.src.main.java.app.database;
+package app.database;
+// since this is a maven project the source root is normally src/main/java, so app.db lngs
 
-import app.src.main.java.app.model.Review;
+import app.model.Review;
 
 import java.sql.*; //Filter down needed modules later
 import java.time.LocalDate;
@@ -41,7 +42,7 @@ public class ReviewDB {
     }
 
     // turned to a function so it can be called and not a saved connection bc we only need the connection for operations
-    private Connection connect() {
+    private Connection connect() throws SQLException {
         Connection connection = null;
 
         try {
@@ -97,24 +98,22 @@ public class ReviewDB {
     /*
     adds a review to the db
     - checks if review is empty, reviewtext and if review of user and gameid are existing already
+    - returns boolean to help with validity/success flags in controller since theres no exceptions thrown
     */
-    public void addReview(Review review) {
+    public boolean addReview(Review review) {
         if (review == null) {
             System.out.println("Review cannot be empty");
-            // throw excpt?
-            return;
+            return false;
         }
 
         if (review.getReviewText() == null || review.getReviewText().isBlank()) {
             System.out.println("Review text cannot be empty");
-            // throw excpt?
-            return;
+            return false;
         }
 
         if (reviewExists(review.getUserId(), review.getGameId())) {
             System.out.println("Review already exists for this user on this game");
-            // throw excpt?
-            return;
+            return false;
         }
 
         String format = """
@@ -147,7 +146,9 @@ public class ReviewDB {
             System.out.println("Something has gone terribly wrong.");
             System.out.println(e.getMessage());
             e.printStackTrace();
+            return false;
         }
+        return true;
     }
 
     // getReviewById

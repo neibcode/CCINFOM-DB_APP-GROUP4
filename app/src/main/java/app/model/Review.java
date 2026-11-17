@@ -1,5 +1,5 @@
-package app.src.main.java.app.model;
-
+package app.model;
+// since this is a maven project the source root is normally src/main/java, so app.model lngs
 import java.time.LocalDateTime;
 
 public class Review {

@@ -1,6 +1,7 @@
-package app.src.main.java.app.database;
+package app.database;
+// since this is a maven project the source root is normally src/main/java, so app.db lngs
 
-import app.src.main.java.app.model.User;
+import app.model.User;
 
 import org.mindrot.jbcrypt.BCrypt;
 
@@ -12,7 +13,7 @@ public class UserDB {
     private static final String URL = "jdbc:sqlite:gamereview.db";
 
     // turned to a function so it can be called and not a saved connection bc we only need the connection for operations
-    private Connection connect() {
+    private Connection connect() throws SQLException {
         Connection connection = null;
 
         try {
@@ -35,11 +36,11 @@ public class UserDB {
     }
 
     // create user to db
-    public void addUser(String username, String password) {
+    // - returns boolean to help with validity/success flags in controller since theres no exceptions thrown
+    public boolean addUser(String username, String password) {
         if (username == null || password == null || username.isBlank() || password.isEmpty()) {
             System.out.println("Username and password are required");
-            // throw exception?
-            return;
+            return false;
         }
 
         String format = """
@@ -53,14 +54,17 @@ public class UserDB {
             query.setString(1, username.trim());
             query.setString(2, BCrypt.hashpw(password, BCrypt.gensalt()));
 
-            query.executeQuery();
+            query.executeUpdate();
         }
         catch (SQLException e)
         {
             System.out.println("Something has gone terribly wrong.");
             System.out.println(e.getMessage());
             e.printStackTrace();
+            return false;
         }
+        // success
+        return true;
     }
 
     public User getUserById(int userId) {
@@ -215,7 +219,6 @@ public class UserDB {
             return false;
         }
 
-        ResultSet res;
         try (Connection connection = connect()) {
             String format = """
                 SELECT password_hash
@@ -229,15 +232,17 @@ public class UserDB {
             try (PreparedStatement query = connection.prepareStatement(format)) {
                 query.setInt(1, userId);
 
-                res = query.executeQuery();
-                if (!res.next()) {
-                    return false; // no acct found
-                }
+                try (ResultSet res = query.executeQuery()) {
+                    if (!res.next()) {
+                        return false; // no acct found
+                    }
 
+                    hash = res.getString("password_hash");
+                }
             }
 
             // if invalid check, current pass entered is wrong
-            if (!BCrypt.checkpw(currentPassword, res.getString("password_hash"))) {
+            if (!BCrypt.checkpw(currentPassword, hash)) {
                 return false;
             }
 
