@@ -804,7 +804,7 @@ public class MainWindow extends javax.swing.JFrame {
     }
     
     public String getPassword(){
-        return passwordField.getPassword().toString();
+        return new String(passwordField.getPassword());
     }
     
     //Search Functions
